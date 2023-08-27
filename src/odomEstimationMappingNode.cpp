@@ -101,12 +101,14 @@ void velodyneSurfHandler(const sensor_msgs::msg::PointCloud2::SharedPtr laserClo
 {
     std::lock_guard<std::mutex> lock(mutex_lock);
     pointCloudSurfBuf.push(laserCloudMsg);
+	odom_estimation();
     mutex_lock.unlock();
 }
 void velodyneEdgeHandler(const sensor_msgs::msg::PointCloud2::SharedPtr laserCloudMsg)
 {
     std::lock_guard<std::mutex> lock(mutex_lock);
     pointCloudEdgeBuf.push(laserCloudMsg);
+	odom_estimation();
     mutex_lock.unlock();
 }
 
@@ -124,8 +126,8 @@ void odom_estimation(){
             if(pointCloudSurfBuf_time.seconds() < pointCloudEdgeBuf_time.seconds()-0.5*lidar_param.scan_period){
                 pointCloudSurfBuf.pop();
                 RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"time stamp unaligned with extra point cloud, pls check your data --> odom correction");
-                mutex_lock.unlock();
-                continue;  
+                //mutex_lock.unlock();
+                //continue;  
             }
 
 			// pointCloudEdgeBuf_time = pointCloudEdgeBuf.front()->header.stamp;
@@ -133,8 +135,8 @@ void odom_estimation(){
             if(pointCloudEdgeBuf_time.seconds() < pointCloudSurfBuf_time.seconds()-0.5*lidar_param.scan_period){
                 pointCloudEdgeBuf.pop();
                 RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"time stamp unaligned with extra point cloud, pls check your data --> odom correction");
-                mutex_lock.unlock();
-                continue;  
+                //mutex_lock.unlock();
+                //continue;  
             }
             //if time aligned 
             pcl::PointCloud<pcl::PointXYZ>::Ptr pointcloud_surf_in(new pcl::PointCloud<pcl::PointXYZ>());
@@ -144,7 +146,7 @@ void odom_estimation(){
             rclcpp::Time pointcloud_time = (pointCloudEdgeBuf.front())->header.stamp;
             pointCloudEdgeBuf.pop();
             pointCloudSurfBuf.pop();
-            mutex_lock.unlock();
+            //mutex_lock.unlock();
 
             if(is_odom_inited == false){
                 odomEstimation.initMapWithPoints(pointcloud_edge_in, pointcloud_surf_in);

@@ -104,25 +104,28 @@ mapOptimizationNode() : Node("mapOptimizationNode"){
 
     map_pub = create_publisher<sensor_msgs::msg::PointCloud2>("/map", 100);
 	
-    std::thread map_optimization_process(&mapOptimizationNode::map_optimization, this);
+    //std::thread map_optimization_process(&mapOptimizationNode::map_optimization, this);
 }
 
 void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
     std::lock_guard<std::mutex> lock(mutex_lock);
     odometryBuf.push(msg);
+	map_optimization();
     mutex_lock.unlock();
 }
 void velodyneSurfHandler(const sensor_msgs::msg::PointCloud2::SharedPtr laserCloudMsg)
 {
     std::lock_guard<std::mutex> lock(mutex_lock);
     pointCloudSurfBuf.push(laserCloudMsg);
+	map_optimization();
     mutex_lock.unlock();
 }
 void velodyneEdgeHandler(const sensor_msgs::msg::PointCloud2::SharedPtr laserCloudMsg)
 {
     mutex_lock.lock();
     pointCloudEdgeBuf.push(laserCloudMsg);
+	map_optimization();
     mutex_lock.unlock();
 }
 
@@ -151,7 +154,7 @@ void map_optimization(){
         if(!odometryBuf.empty() && !pointCloudSurfBuf.empty() && !pointCloudEdgeBuf.empty()){
 
             //read data
-            std::lock_guard<std::mutex> lock(mutex_lock);
+            //std::lock_guard<std::mutex> lock(mutex_lock);
 			
 			rclcpp::Time odometryBuf_time = odometryBuf.front()->header.stamp;
 			rclcpp::Time pointCloudSurfBuf_time = pointCloudSurfBuf.front()->header.stamp;
@@ -163,8 +166,8 @@ void map_optimization(){
 				   
                 RCLCPP_WARN(rclcpp::get_logger("mONode"),"time stamp unaligned error and odom discarded, pls check your data --> map optimization"); 
                 odometryBuf.pop();
-                mutex_lock.unlock();
-                continue;              
+                //mutex_lock.unlock();
+                //continue;              
             }
 
             if(!pointCloudSurfBuf.empty() && 
@@ -172,8 +175,8 @@ void map_optimization(){
 			   pointCloudSurfBuf_time.seconds() < pointCloudEdgeBuf_time.seconds()-0.5*lidar_param.scan_period)){
                 pointCloudSurfBuf.pop();
                 RCLCPP_INFO(rclcpp::get_logger("mONode"),"time stamp unaligned with extra point cloud, pls check your data --> map optimization");
-                mutex_lock.unlock();
-                continue;  
+                //mutex_lock.unlock();
+                //continue;  
             }
 
             if(!pointCloudEdgeBuf.empty() && 
@@ -181,8 +184,8 @@ void map_optimization(){
 			   pointCloudEdgeBuf_time.seconds() < pointCloudSurfBuf_time.seconds()-0.5*lidar_param.scan_period)){
                 pointCloudEdgeBuf.pop();
                 RCLCPP_INFO(rclcpp::get_logger("mONode"),"time stamp unaligned with extra point cloud, pls check your data --> map optimization");
-                mutex_lock.unlock();
-                continue;  
+                //mutex_lock.unlock();
+                //continue;  
             }
 
             //if time aligned 
@@ -197,7 +200,7 @@ void map_optimization(){
             pointCloudEdgeBuf.pop();
             pointCloudSurfBuf.pop();
             odometryBuf.pop();
-            mutex_lock.unlock();
+            //mutex_lock.unlock();
             total_frame++;   
             if(total_frame%10 == 0) 
                 RCLCPP_INFO(rclcpp::get_logger("mONode"),"total_frame %d", total_frame);
@@ -217,7 +220,7 @@ void map_optimization(){
             if(total_frame%30 ==0){
                 sensor_msgs::msg::PointCloud2 PointsMsg;
                 pcl::toROSMsg(*(mapOptimization.edgeMap)+*(mapOptimization.surfMap), PointsMsg);
-                RCLCPP_INFO(rclcpp::get_logger("mONode"),"Edge Map size:%d, Surf Map Size:%d", (mapOptimization.edgeMap)->points.size(), (mapOptimization.surfMap)->points.size());
+                RCLCPP_INFO(rclcpp::get_logger("mONode"),"Edge Map size:%ld, Surf Map Size:%ld", (mapOptimization.edgeMap)->points.size(), (mapOptimization.surfMap)->points.size());
                 PointsMsg.header.stamp = pointcloud_time;
                 PointsMsg.header.frame_id = "map";
                 map_pub->publish(PointsMsg);
