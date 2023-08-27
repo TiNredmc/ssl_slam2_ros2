@@ -94,7 +94,7 @@ odomEstimationMappingNode() : Node("odomEstimationMappingNode"){
     pubSurfLaserCloud = create_publisher<sensor_msgs::msg::PointCloud2>("/surf_map", 100);
     pubLaserOdometry = create_publisher<nav_msgs::msg::Odometry>("/odom", 100);
 	
-    std::thread odom_estimation_process(&odomEstimationMappingNode::odom_estimation, this);
+    //std::thread odom_estimation_process(&odomEstimationMappingNode::odom_estimation, this);
 }
 
 void velodyneSurfHandler(const sensor_msgs::msg::PointCloud2::SharedPtr laserCloudMsg)
