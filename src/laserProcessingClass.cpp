@@ -9,7 +9,7 @@ void LaserProcessingClass::init(lidar::Lidar lidar_param_in){
 
 }
 
-void LaserProcessingClass::featureExtraction(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc_out_edge, pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc_out_surf){
+void LaserProcessingClass::featureExtraction(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_in, pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_out_edge, pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_out_surf){
 
     std::vector<int> indices;
     pcl::removeNaNFromPointCloud(*pc_in, indices);
@@ -25,7 +25,7 @@ void LaserProcessingClass::featureExtraction(const pcl::PointCloud<pcl::PointXYZ
     }
 
 
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> laserCloudScans;
+    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> laserCloudScans;
 
     double last_angle = atan2(pc_in->points[0].z,pc_in->points[0].y) * 180 / M_PI;
     int count =0;
@@ -42,7 +42,7 @@ void LaserProcessingClass::featureExtraction(const pcl::PointCloud<pcl::PointXYZ
         if(fabs(angle - last_angle)>0.05){
             
             if(count>30){
-                pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_temp(new pcl::PointCloud<pcl::PointXYZRGB>());
+                pcl::PointCloud<pcl::PointXYZ>::Ptr pc_temp(new pcl::PointCloud<pcl::PointXYZ>());
                 for(int k=0;k<count;k++){
                     pc_temp->push_back(pc_in->points[i-count+k+1]);
 
@@ -91,7 +91,7 @@ void LaserProcessingClass::featureExtraction(const pcl::PointCloud<pcl::PointXYZ
         if(pc_out_edge->points[i].z<=-0.55)
             inliers->indices.push_back(i);
     }
-    pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+    pcl::ExtractIndices<pcl::PointXYZ> extract;
     extract.setInputCloud(pc_out_edge);
     extract.setIndices(inliers);
     extract.setNegative(true);
@@ -101,7 +101,7 @@ void LaserProcessingClass::featureExtraction(const pcl::PointCloud<pcl::PointXYZ
 }
 
 
-void LaserProcessingClass::featureExtractionFromSector(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc_in, std::vector<Double2d>& cloudCurvature, pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc_out_edge, pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc_out_surf){
+void LaserProcessingClass::featureExtractionFromSector(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_in, std::vector<Double2d>& cloudCurvature, pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_out_edge, pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_out_surf){
 
     std::sort(cloudCurvature.begin(), cloudCurvature.end(), [](const Double2d & a, const Double2d & b)
     { 

@@ -12,8 +12,8 @@ MapOptimizationClass::MapOptimizationClass()
 void MapOptimizationClass::init(double map_resolution_in){
 
     map_resolution = map_resolution_in;
-    edgeMap = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>()); 
-    surfMap = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>()); 
+    edgeMap = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>()); 
+    surfMap = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>()); 
 
     map_to_odom = Eigen::Isometry3d::Identity();
     pointcloud_surf_arr.clear();
@@ -46,14 +46,14 @@ void MapOptimizationClass::saveMap(std::string map_path){
 
 }
 
-void MapOptimizationClass::addPoseToGraph(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pointcloud_edge_in, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pointcloud_surf_in, Eigen::Isometry3d& odom_in){
+void MapOptimizationClass::addPoseToGraph(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud_edge_in, const pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud_surf_in, Eigen::Isometry3d& odom_in){
 
     Eigen::Isometry3d transformed_pose = map_to_odom * odom_in;
 
     downSizeEdgeFilter.setInputCloud(pointcloud_edge_in);
     downSizeSurfFilter.setInputCloud(pointcloud_surf_in);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr filtered_edge_in(new pcl::PointCloud<pcl::PointXYZRGB>()); 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr filtered_surf_in(new pcl::PointCloud<pcl::PointXYZRGB>()); 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_edge_in(new pcl::PointCloud<pcl::PointXYZ>()); 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_surf_in(new pcl::PointCloud<pcl::PointXYZ>()); 
     downSizeEdgeFilter.filter(*filtered_edge_in);
     downSizeSurfFilter.filter(*filtered_surf_in);
 
@@ -64,8 +64,8 @@ void MapOptimizationClass::addPoseToGraph(const pcl::PointCloud<pcl::PointXYZRGB
     gtsam::Pose3 pose3_current = eigenToPose3(transformed_pose);
     pose_optimized_arr.push_back(pose3_current);
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_pc_edge(new pcl::PointCloud<pcl::PointXYZRGB>()); 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_pc_surf(new pcl::PointCloud<pcl::PointXYZRGB>()); 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_pc_edge(new pcl::PointCloud<pcl::PointXYZ>()); 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_pc_surf(new pcl::PointCloud<pcl::PointXYZ>()); 
 
     pcl::transformPointCloud(*filtered_edge_in, *transformed_pc_edge, transformed_pose.cast<float>());
     pcl::transformPointCloud(*filtered_surf_in, *transformed_pc_surf, transformed_pose.cast<float>());
@@ -108,11 +108,11 @@ bool MapOptimizationClass::optimizeGraph(int matched_id, int current_id){
 }
 void MapOptimizationClass::updateMap(void){
 
-    edgeMap = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
-    surfMap = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>()); 
+    edgeMap = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
+    surfMap = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>()); 
     for(int i =0;i<getFrameNum();i++){
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_pc_edge(new pcl::PointCloud<pcl::PointXYZRGB>()); 
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_pc_surf(new pcl::PointCloud<pcl::PointXYZRGB>()); 
+        pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_pc_edge(new pcl::PointCloud<pcl::PointXYZ>()); 
+        pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_pc_surf(new pcl::PointCloud<pcl::PointXYZ>()); 
         pcl::transformPointCloud(*pointcloud_edge_arr[i], *transformed_pc_edge, pose3ToEigen(pose_optimized_arr[i]).cast<float>());
         pcl::transformPointCloud(*pointcloud_surf_arr[i], *transformed_pc_surf, pose3ToEigen(pose_optimized_arr[i]).cast<float>());
 
@@ -137,19 +137,19 @@ gtsam::Pose3 MapOptimizationClass::eigenToPose3(const Eigen::Isometry3d& pose_ei
 }
 
 bool MapOptimizationClass::geometryConsistencyVerification(int matched_id, int current_id, Eigen::Isometry3d& transform){
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr map_surf_temp(new pcl::PointCloud<pcl::PointXYZRGB>());
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr map_edge_temp(new pcl::PointCloud<pcl::PointXYZRGB>());  
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr map_surf(new pcl::PointCloud<pcl::PointXYZRGB>()); 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr map_edge(new pcl::PointCloud<pcl::PointXYZRGB>()); 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr map_surf_temp(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PointCloud<pcl::PointXYZ>::Ptr map_edge_temp(new pcl::PointCloud<pcl::PointXYZ>());  
+    pcl::PointCloud<pcl::PointXYZ>::Ptr map_surf(new pcl::PointCloud<pcl::PointXYZ>()); 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr map_edge(new pcl::PointCloud<pcl::PointXYZ>()); 
 
     for(int i = -10; i <=10; i=i+5){
         if(matched_id+i>= current_id || matched_id+i<0)
             continue;
         Eigen::Isometry3d transform_pose = pose3ToEigen(pose_optimized_arr[matched_id+i]);
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_temp(new pcl::PointCloud<pcl::PointXYZRGB>());
+        pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_temp(new pcl::PointCloud<pcl::PointXYZ>());
         pcl::transformPointCloud(*pointcloud_surf_arr[matched_id+i], *transformed_temp, transform_pose.cast<float>());
         *map_surf_temp+=*transformed_temp;
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_temp2(new pcl::PointCloud<pcl::PointXYZRGB>());
+        pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_temp2(new pcl::PointCloud<pcl::PointXYZ>());
         pcl::transformPointCloud(*pointcloud_edge_arr[matched_id+i], *transformed_temp2, transform_pose.cast<float>());
         *map_edge_temp+=*transformed_temp2;
     }
@@ -158,18 +158,18 @@ bool MapOptimizationClass::geometryConsistencyVerification(int matched_id, int c
     pcl::transformPointCloud(*map_edge_temp, *map_edge, transform_pose.cast<float>().inverse());
     pcl::transformPointCloud(*map_surf_temp, *map_surf, transform_pose.cast<float>().inverse());
     //ROS_INFO("tag31");
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr current_scan_surf_temp(new pcl::PointCloud<pcl::PointXYZRGB>()); 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr current_scan_edge_temp(new pcl::PointCloud<pcl::PointXYZRGB>()); 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr current_scan_surf(new pcl::PointCloud<pcl::PointXYZRGB>()); 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr current_scan_edge(new pcl::PointCloud<pcl::PointXYZRGB>()); 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr current_scan_surf_temp(new pcl::PointCloud<pcl::PointXYZ>()); 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr current_scan_edge_temp(new pcl::PointCloud<pcl::PointXYZ>()); 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr current_scan_surf(new pcl::PointCloud<pcl::PointXYZ>()); 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr current_scan_edge(new pcl::PointCloud<pcl::PointXYZ>()); 
     for(int i = 0; i <=0; i=i+3){
         if(current_id-i<0)
             continue;
         Eigen::Isometry3d transform_pose = pose3ToEigen(pose_optimized_arr[current_id+i]);
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_temp(new pcl::PointCloud<pcl::PointXYZRGB>());
+        pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_temp(new pcl::PointCloud<pcl::PointXYZ>());
         pcl::transformPointCloud(*pointcloud_surf_arr[current_id-i], *transformed_temp, transform_pose.cast<float>());
         *current_scan_surf_temp+=*transformed_temp;
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_temp2(new pcl::PointCloud<pcl::PointXYZRGB>());
+        pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_temp2(new pcl::PointCloud<pcl::PointXYZ>());
         pcl::transformPointCloud(*pointcloud_edge_arr[current_id-i], *transformed_temp2, transform_pose.cast<float>());
         *current_scan_edge_temp+=*transformed_temp2;
     }
@@ -185,20 +185,20 @@ bool MapOptimizationClass::geometryConsistencyVerification(int matched_id, int c
         return true;
     }
     else{
-        ROS_WARN("loop rejected due to geometry verification current_id%d matched_id %d, score: %f solution",current_id,matched_id,match_score);
-        ROS_WARN("No loop closure identified, the map will be generated without global optimization. if you want to force a loop closure happen, change your loop closure threshold higher");
+        RCLCPP_WARN(rclcpp::get_logger("mOClass"),"loop rejected due to geometry verification current_id%d matched_id %d, score: %f solution",current_id,matched_id,match_score);
+        RCLCPP_WARN(rclcpp::get_logger("mOClass"),"No loop closure identified, the map will be generated without global optimization. if you want to force a loop closure happen, change your loop closure threshold higher");
         return false;
     }
 }
 
-double MapOptimizationClass::estimateOdom(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc_source_edge, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc_source_surf, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc_target_edge, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc_target_surf, Eigen::Isometry3d& transform){
+double MapOptimizationClass::estimateOdom(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_source_edge, const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_source_surf, const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_target_edge, const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_target_surf, Eigen::Isometry3d& transform){
     Eigen::Quaterniond init_q(transform.rotation());
     Eigen::Vector3d init_t(0,0,0);
     double parameters[7] = {init_q.x(), init_q.y(), init_q.z(), init_q.w(),init_t.x(), init_t.y(), init_t.z()};
     Eigen::Map<Eigen::Quaterniond> q_temp = Eigen::Map<Eigen::Quaterniond>(parameters);
     Eigen::Map<Eigen::Vector3d> t_temp = Eigen::Map<Eigen::Vector3d>(parameters + 4);
-    pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr kdtreeCorner = pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr(new pcl::KdTreeFLANN<pcl::PointXYZRGB>());
-    pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr kdtreeSurf = pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr(new pcl::KdTreeFLANN<pcl::PointXYZRGB>());
+    pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr kdtreeCorner = pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr(new pcl::KdTreeFLANN<pcl::PointXYZ>());
+    pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr kdtreeSurf = pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr(new pcl::KdTreeFLANN<pcl::PointXYZ>());
     kdtreeCorner->setInputCloud(pc_source_edge);
     kdtreeSurf->setInputCloud(pc_source_surf);
     double total_cost = 300;
@@ -215,7 +215,7 @@ double MapOptimizationClass::estimateOdom(const pcl::PointCloud<pcl::PointXYZRGB
         transform.linear() = q_temp.toRotationMatrix();
         //add edge cost factor
         int corner_num=0;
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr tranformed_edge(new pcl::PointCloud<pcl::PointXYZRGB>());
+        pcl::PointCloud<pcl::PointXYZ>::Ptr tranformed_edge(new pcl::PointCloud<pcl::PointXYZ>());
         pcl::transformPointCloud(*pc_target_edge, *tranformed_edge, transform);
         for (int i = 0; i < (int) tranformed_edge->points.size(); i++)
         {
@@ -261,12 +261,12 @@ double MapOptimizationClass::estimateOdom(const pcl::PointCloud<pcl::PointXYZRGB
             }
         }
         if(corner_num<20){
-            ROS_INFO("not enough corresponding points");
+            RCLCPP_INFO(rclcpp::get_logger("mOClass"),"not enough corresponding points");
             return 300.0;
         }
         //add surf cost factor
         int surf_num=0; 
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr tranformed_surf(new pcl::PointCloud<pcl::PointXYZRGB>());
+        pcl::PointCloud<pcl::PointXYZ>::Ptr tranformed_surf(new pcl::PointCloud<pcl::PointXYZ>());
         pcl::transformPointCloud(*pc_target_surf, *tranformed_surf, transform);    
         // find correspondence for plane features
         for (int i = 0; i <(int) tranformed_surf->points.size(); ++i)
@@ -314,7 +314,7 @@ double MapOptimizationClass::estimateOdom(const pcl::PointCloud<pcl::PointXYZRGB
         }
 
         if(surf_num<20){
-            ROS_INFO("not enough corresponding points");
+            RCLCPP_INFO(rclcpp::get_logger("mOClass"),"not enough corresponding points");
             return 300.0;
         }
         ceres::Solver::Options options;

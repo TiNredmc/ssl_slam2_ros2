@@ -7,24 +7,24 @@
 void OdomEstimationClass::init(lidar::Lidar lidar_param, double map_resolution, std::string map_path){
 
     //init local map
-    laserCloudCornerMap = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
-    laserCloudSurfMap = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>());
+    laserCloudCornerMap = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
+    laserCloudSurfMap = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
 
     //load map 
-    if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (map_path+"edge_map.pcd", *laserCloudCornerMap) == -1){
-        ROS_ERROR("Couldn't read edge map file %sedge_map.pcd \n",map_path.c_str());
+    if (pcl::io::loadPCDFile<pcl::PointXYZ> (map_path+"edge_map.pcd", *laserCloudCornerMap) == -1){
+        RCLCPP_ERROR(rclcpp::get_logger("oELClass"),"Couldn't read edge map file %sedge_map.pcd \n",map_path.c_str());
     }
-    if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (map_path+"surf_map.pcd", *laserCloudSurfMap) == -1){
-        ROS_ERROR("Couldn't read edge map file %surf_map.pcd \n",map_path.c_str());
+    if (pcl::io::loadPCDFile<pcl::PointXYZ> (map_path+"surf_map.pcd", *laserCloudSurfMap) == -1){
+        RCLCPP_ERROR(rclcpp::get_logger("oELClass"),"Couldn't read edge map file %surf_map.pcd \n",map_path.c_str());
     }
 
     if(laserCloudCornerMap->points.size()<100 || laserCloudSurfMap->points.size()<200){
-        ROS_ERROR("not enough points in map to associate, map error");
+        RCLCPP_ERROR(rclcpp::get_logger("oELClass"),"not enough points in map to associate, map error");
     }
 
     //kd-tree
-    kdtreeEdgeMap = pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr(new pcl::KdTreeFLANN<pcl::PointXYZRGB>());
-    kdtreeSurfMap = pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr(new pcl::KdTreeFLANN<pcl::PointXYZRGB>());
+    kdtreeEdgeMap = pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr(new pcl::KdTreeFLANN<pcl::PointXYZ>());
+    kdtreeSurfMap = pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr(new pcl::KdTreeFLANN<pcl::PointXYZ>());
     kdtreeEdgeMap->setInputCloud(laserCloudCornerMap);
     kdtreeSurfMap->setInputCloud(laserCloudSurfMap);
 
@@ -46,7 +46,7 @@ void OdomEstimationClass::setPose(double x_in, double y_in, double z_in, double 
     last_odom = odom;
 }
 
-void OdomEstimationClass::matchPointsToMap(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& edge_in, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& surf_in){
+void OdomEstimationClass::matchPointsToMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr& edge_in, const pcl::PointCloud<pcl::PointXYZ>::Ptr& surf_in){
     if(optimization_count>2)
         optimization_count--;
 
@@ -57,8 +57,8 @@ void OdomEstimationClass::matchPointsToMap(const pcl::PointCloud<pcl::PointXYZRG
     q_w_curr = Eigen::Quaterniond(odom.rotation());
     t_w_curr = odom.translation();
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsampledEdgeCloud(new pcl::PointCloud<pcl::PointXYZRGB>());
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsampledSurfCloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+    pcl::PointCloud<pcl::PointXYZ>::Ptr downsampledEdgeCloud(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PointCloud<pcl::PointXYZ>::Ptr downsampledSurfCloud(new pcl::PointCloud<pcl::PointXYZ>());
     downSamplingToMap(edge_in,downsampledEdgeCloud,surf_in,downsampledSurfCloud);
 
     bool edge_point_flag = false;
@@ -89,23 +89,23 @@ void OdomEstimationClass::matchPointsToMap(const pcl::PointCloud<pcl::PointXYZRG
         odom.linear() = q_w_curr.toRotationMatrix();
         odom.translation() = t_w_curr; 
     }else{
-        ROS_WARN("insufficient points matched");
+        RCLCPP_WARN(rclcpp::get_logger("oELClass"),"insufficient points matched");
     }
 
 
 }
-void OdomEstimationClass::downSamplingToMap(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& edge_pc_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr& edge_pc_out, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& surf_pc_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr& surf_pc_out){
+void OdomEstimationClass::downSamplingToMap(const pcl::PointCloud<pcl::PointXYZ>::Ptr& edge_pc_in, pcl::PointCloud<pcl::PointXYZ>::Ptr& edge_pc_out, const pcl::PointCloud<pcl::PointXYZ>::Ptr& surf_pc_in, pcl::PointCloud<pcl::PointXYZ>::Ptr& surf_pc_out){
     downSizeFilterEdge.setInputCloud(edge_pc_in);
     downSizeFilterEdge.filter(*edge_pc_out);
     downSizeFilterSurf.setInputCloud(surf_pc_in);
     downSizeFilterSurf.filter(*surf_pc_out);    
 }
 
-bool OdomEstimationClass::addEdgeCostFactor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc_in, ceres::Problem& problem, ceres::LossFunction *loss_function){
+bool OdomEstimationClass::addEdgeCostFactor(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_in, ceres::Problem& problem, ceres::LossFunction *loss_function){
     int corner_num=0;
     for (int i = 0; i < (int)pc_in->points.size(); i++)
     {
-        pcl::PointXYZRGB point_temp;
+        pcl::PointXYZ point_temp;
         pointAssociateToMap(&(pc_in->points[i]), &point_temp);
 
         std::vector<int> pointSearchInd;
@@ -156,7 +156,7 @@ bool OdomEstimationClass::addEdgeCostFactor(const pcl::PointCloud<pcl::PointXYZR
     }
 
 }
-void OdomEstimationClass::pointAssociateToMap(pcl::PointXYZRGB const *const pi, pcl::PointXYZRGB *const po)
+void OdomEstimationClass::pointAssociateToMap(pcl::PointXYZ const *const pi, pcl::PointXYZ *const po)
 {
     Eigen::Vector3d point_curr(pi->x, pi->y, pi->z);
     Eigen::Vector3d point_w = q_w_curr * point_curr + t_w_curr;
@@ -165,11 +165,11 @@ void OdomEstimationClass::pointAssociateToMap(pcl::PointXYZRGB const *const pi, 
     po->z = point_w.z();
     //po->intensity = 1.0;
 }
-bool OdomEstimationClass::addSurfCostFactor(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc_in, ceres::Problem& problem, ceres::LossFunction *loss_function){
+bool OdomEstimationClass::addSurfCostFactor(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_in, ceres::Problem& problem, ceres::LossFunction *loss_function){
     int surf_num=0;
     for (int i = 0; i < (int)pc_in->points.size(); i++)
     {
-        pcl::PointXYZRGB point_temp;
+        pcl::PointXYZ point_temp;
         pointAssociateToMap(&(pc_in->points[i]), &point_temp);
         std::vector<int> pointSearchInd;
         std::vector<float> pointSearchSqDis;
