@@ -116,11 +116,11 @@ bool is_odom_inited = false;
 double total_time =0;
 int total_frame=0;
 void odom_estimation(){
-    while(rclcpp::ok()){
+//    while(rclcpp::ok()){
         if(!pointCloudEdgeBuf.empty() && !pointCloudSurfBuf.empty()){
 
             //read data
-            std::lock_guard<std::mutex> lock(mutex_lock);
+            //std::lock_guard<std::mutex> lock(mutex_lock);
 			rclcpp::Time pointCloudSurfBuf_time = pointCloudSurfBuf.front()->header.stamp;
 			rclcpp::Time pointCloudEdgeBuf_time = pointCloudEdgeBuf.front()->header.stamp;
             if(pointCloudSurfBuf_time.seconds() < pointCloudEdgeBuf_time.seconds()-0.5*lidar_param.scan_period){
@@ -201,7 +201,7 @@ void odom_estimation(){
         //sleep 2 ms every time
         std::chrono::milliseconds dura(2);
         std::this_thread::sleep_for(dura);
-    }
+//    }
 }
 
 };

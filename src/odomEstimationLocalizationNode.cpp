@@ -124,7 +124,7 @@ bool is_odom_inited = false;
 double total_time =0;
 int total_frame=0;
 void odom_estimation(){
-    while(rclcpp::ok()){
+//    while(rclcpp::ok()){
         if(!pointCloudEdgeBuf.empty() && !pointCloudSurfBuf.empty()){
 
             //read data
@@ -214,7 +214,7 @@ void odom_estimation(){
         //sleep 2 ms every time
         std::chrono::milliseconds dura(2);
         std::this_thread::sleep_for(dura);
-    }
+//    }
 }
 
 };

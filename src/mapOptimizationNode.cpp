@@ -150,7 +150,7 @@ int update_count = 0;
 int total_frame=0;
 
 void map_optimization(){
-    while(rclcpp::ok()){
+//    while(rclcpp::ok()){
         if(!odometryBuf.empty() && !pointCloudSurfBuf.empty() && !pointCloudEdgeBuf.empty()){
 
             //read data
@@ -230,7 +230,7 @@ void map_optimization(){
         //sleep 2 ms every time
         std::chrono::milliseconds dura(2);
         std::this_thread::sleep_for(dura);
-    }
+//    }
 }
 
 };
