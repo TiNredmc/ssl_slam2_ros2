@@ -1,5 +1,5 @@
-# SSL_SLAM2
-## Lightweight 3-D Localization and Mapping for Solid-State LiDAR (Intel Realsense L515 as an example)
+# SSL_SLAM2_ROS2
+## Lightweight 3-D Localization and Mapping for Solid-State LiDAR (Intel Realsense L515 as an example) ported to ROS2 Humble
 
 ### This repo is an extension work of [SSL_SLAM](https://github.com/wh200720041/SSL_SLAM). Similar to RTABMAP, SSL_SLAM2 separates the mapping module and localization module. Map saving and map optimization is enabled in the mapping unit. Map loading and localization is enabled in the localziation unit.
 
@@ -35,9 +35,9 @@ Running speed: 20 Hz on Intel NUC, 30 Hz on PC
 
 ## 2. Prerequisites
 ### 2.1 **Ubuntu** and **ROS**
-Ubuntu 64-bit 18.04.
+Ubuntu 64-bit 22.04.
 
-ROS Melodic. [ROS Installation](http://wiki.ros.org/ROS/Installation)
+ROS Humble. [ROS Installation](http://wiki.ros.org/ROS/Installation)
 
 ### 2.2. **Ceres Solver**
 Follow [Ceres Installation](http://ceres-solver.org/installation.html).
@@ -50,7 +50,7 @@ Tested with 1.8.1
 ### 2.4. **GTSAM**
 Follow [GTSAM Installation](https://gtsam.org/get_started/).
 
-### 2.5. **Trajectory visualization**
+### 2.5. **Trajectory visualization (Proting in progress)**
 For visualization purpose, this package uses hector trajectory sever, you may install the package by 
 ```
 sudo apt-get install ros-melodic-hector-trajectory-server
@@ -77,14 +77,18 @@ Copy [realsense_ros](https://github.com/IntelRealSense/realsense-ros) package to
     catkin_make
 ```
 
-## 4. Build SSL_SLAM2
+## 4. Build SSL_SLAM2_ROS2
 ### 4.1 Clone repository:
 ```
-    cd ~/catkin_ws/src
-    git clone https://github.com/wh200720041/ssl_slam2.git
+    cd ~/<your_ros2_ws>/src
+    git clone https://github.com/TiNredmc/ssl_slam2_ros2.git
     cd ..
-    catkin_make
-    source ~/catkin_ws/devel/setup.bash
+    colcon build --symlink-install --packages-select ssl_slam2  --parallel-workers 4
+    source ~/<your_ros2_ws>/install/setup.bash
+```
+if you encounter ``c++: fatal error: Killed signal terminated program cc1plus`` you might need to rebuild again using
+```
+    colcon build --symlink-install --packages-select ssl_slam2  --executor sequential
 ```
 
 ### 4.2 Download test rosbag
@@ -100,16 +104,16 @@ unzip MappingTest.zip
 ### 4.3 Map Building
 map optimization and building
 ```
-    roslaunch ssl_slam2 ssl_slam2_mapping.launch
+  ros2 launch ssl_slam2 ssl_slam2_mapping.launch.py
 ```
 The map optimization is performed based on loop closure, you have to specify the loop clousre manually in order to trigger global optimization. To save map, open a new terminal and 
 ```
-  rosservice call /save_map
+  ros2 service call /save_map std_srvs/srv/Trigger
 ```
 Upon calling the serviece, the map will be automatically saved. It is recommended to have a loop closure to reduce the drifts. Once the service is called, loop closure will be checked. 
 For example, in the rosbag provided, the loop closure appears at frame 1060-1120, thus, when you see "total_frame 1070" or "total_frame 1110" you may immediately type 
 ```
-  rosservice call /save_map
+  ros2 service call /save_map std_srvs/srv/Trigger
 ```
 Since the current frame is between 1060 and 1120, the loop closure will be triggered automatically and the global map will be optimized and saved 
 
