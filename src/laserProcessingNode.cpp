@@ -83,28 +83,22 @@ laserProcessingNode() : Node("laserProcessingNode"){
     lidar_param.setLines(scan_line);
     lidar_param.setMaxDistance(max_dis);
     lidar_param.setMinDistance(min_dis);
-	
-	RCLCPP_INFO(rclcpp::get_logger("lPNode"),"Got all Params");
 
     laserProcessing.init(lidar_param);
-	
-	RCLCPP_INFO(rclcpp::get_logger("lPNode"),"Params Initialized");
 	
     subLaserCloud = create_subscription<sensor_msgs::msg::PointCloud2>(
 	                "/camera/depth/points", 
 					rclcpp::SensorDataQoS(), 
 					std::bind(&laserProcessingNode::velodyneHandler, this, std::placeholders::_1));
 					
-	RCLCPP_INFO(rclcpp::get_logger("lPNode"),"Subscriber created");
 
     pubLaserCloudFiltered = create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne_points_filtered", 100);
     pubEdgePoints = create_publisher<sensor_msgs::msg::PointCloud2>("/laser_cloud_edge", 100);
     pubSurfPoints = create_publisher<sensor_msgs::msg::PointCloud2>("/laser_cloud_surf", 100); 
 
-	RCLCPP_INFO(rclcpp::get_logger("lPNode"),"Publishers created");
 
     //std::thread laser_processing_process(&laserProcessingNode::laser_processing, this);
-	//RCLCPP_INFO(rclcpp::get_logger("lPNode"),"Laser processing thread started");
+	RCLCPP_INFO(rclcpp::get_logger("lPNode"),"Laser processing node started");
 }
 
 
@@ -178,8 +172,8 @@ void laser_processing(void){
 
         }
         //sleep 2 ms every time
-        std::chrono::milliseconds dura(2);
-        std::this_thread::sleep_for(dura);
+        //std::chrono::milliseconds dura(2);
+        //std::this_thread::sleep_for(dura);
     //}
 }
 

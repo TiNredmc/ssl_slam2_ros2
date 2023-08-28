@@ -3,6 +3,7 @@
 // Homepage https://wanghan.pro
 
 #include "odomEstimationMappingClass.h"
+#include <pcl/common/point_tests.h>
 
 void OdomEstimationClass::init(lidar::Lidar lidar_param, double map_resolution){
     //init local map
@@ -70,7 +71,7 @@ void OdomEstimationClass::updatePointsToMap(const pcl::PointCloud<pcl::PointXYZ>
             //ROS_WARN("final cost %f",summary.final_cost);
         }
     }else{
-        printf("not enough points in map to associate, map error");
+        printf("not enough points in map to associate, map error\n");
     }
 
     odom = Eigen::Isometry3d::Identity();
@@ -107,10 +108,12 @@ void OdomEstimationClass::addEdgeCostFactor(const pcl::PointCloud<pcl::PointXYZ>
     {
         pcl::PointXYZ point_temp;
         pointAssociateToMap(&(pc_in->points[i]), &point_temp);
-
         std::vector<int> pointSearchInd;
         std::vector<float> pointSearchSqDis;
-        kdtreeEdgeMap->nearestKSearch(point_temp, 5, pointSearchInd, pointSearchSqDis); 
+
+		if(!pcl::isFinite(point_temp))
+			return;
+		kdtreeEdgeMap->nearestKSearch(point_temp, 5, pointSearchInd, pointSearchSqDis); 
         if (pointSearchSqDis[4] < 1.0)
         {
             std::vector<Eigen::Vector3d> nearCorners;
@@ -150,7 +153,7 @@ void OdomEstimationClass::addEdgeCostFactor(const pcl::PointCloud<pcl::PointXYZ>
         }
     }
     if(corner_num<20){
-        printf("not enough correct points");
+        printf("not enough correct points\n");
     }
 
 }
@@ -163,6 +166,9 @@ void OdomEstimationClass::addSurfCostFactor(const pcl::PointCloud<pcl::PointXYZ>
         pointAssociateToMap(&(pc_in->points[i]), &point_temp);
         std::vector<int> pointSearchInd;
         std::vector<float> pointSearchSqDis;
+
+		if(!pcl::isFinite(point_temp))
+			return;
         kdtreeSurfMap->nearestKSearch(point_temp, 5, pointSearchInd, pointSearchSqDis);
 
         Eigen::Matrix<double, 5, 3> matA0;
@@ -205,7 +211,7 @@ void OdomEstimationClass::addSurfCostFactor(const pcl::PointCloud<pcl::PointXYZ>
 
     }
     if(surf_num<20){
-        printf("not enough correct points");
+        printf("not enough correct points\n");
     }
 
 }
