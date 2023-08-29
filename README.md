@@ -40,7 +40,9 @@ Ubuntu 64-bit 22.04.
 ROS Humble. [ROS Installation](http://wiki.ros.org/ROS/Installation)
 
 ### 2.2. **Ceres Solver**
-Follow [Ceres Installation](http://ceres-solver.org/installation.html).
+```
+sudo apt install libceres2 libceres-dev
+```
 
 ### 2.3. **PCL**
 Follow [PCL Installation](http://www.pointclouds.org/downloads/linux.html).
@@ -48,7 +50,11 @@ Follow [PCL Installation](http://www.pointclouds.org/downloads/linux.html).
 Tested with 1.8.1
 
 ### 2.4. **GTSAM**
-Follow [GTSAM Installation](https://gtsam.org/get_started/).
+```
+sudo add-apt-repository ppa:borglab/gtsam-release-4.1
+sudo apt update
+sudo apt install libgtsam-dev libgtsam-unstable-dev
+```
 
 ### 2.5. **Trajectory visualization (Proting in progress)**
 For visualization purpose, this package uses hector trajectory sever, you may install the package by 
