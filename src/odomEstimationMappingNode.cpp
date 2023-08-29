@@ -92,11 +92,10 @@ odomEstimationMappingNode() : Node("odomEstimationMappingNode"){
 	                    rclcpp::SensorDataQoS(), 
 						std::bind(&odomEstimationMappingNode::velodyneSurfHandler, this, std::placeholders::_1));
 	
-    pubEdgeLaserCloud = create_publisher<sensor_msgs::msg::PointCloud2>("/edge_map", 100);
-    pubSurfLaserCloud = create_publisher<sensor_msgs::msg::PointCloud2>("/surf_map", 100);
-    pubLaserOdometry = create_publisher<nav_msgs::msg::Odometry>("/odom", 100);
-	
-    //std::thread odom_estimation_process(&odomEstimationMappingNode::odom_estimation, this);
+    pubEdgeLaserCloud = create_publisher<sensor_msgs::msg::PointCloud2>("/edge_map", 10);
+    pubSurfLaserCloud = create_publisher<sensor_msgs::msg::PointCloud2>("/surf_map", 10);
+    pubLaserOdometry = create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
+
 	RCLCPP_INFO(rclcpp::get_logger("oEMNode"), "odom estimation and mapping node started");
 }
 
@@ -104,14 +103,12 @@ void velodyneSurfHandler(const sensor_msgs::msg::PointCloud2::SharedPtr laserClo
 {
     std::lock_guard<std::mutex> lock(mutex_lock);
     pointCloudSurfBuf.push(laserCloudMsg);
-	odom_estimation();
     mutex_lock.unlock();
 }
 void velodyneEdgeHandler(const sensor_msgs::msg::PointCloud2::SharedPtr laserCloudMsg)
 {
     std::lock_guard<std::mutex> lock(mutex_lock);
     pointCloudEdgeBuf.push(laserCloudMsg);
-	odom_estimation();
     mutex_lock.unlock();
 }
 
@@ -119,29 +116,25 @@ bool is_odom_inited = false;
 double total_time =0;
 int total_frame=0;
 void odom_estimation(){
-//    while(rclcpp::ok()){
+    while(1){
         if(!pointCloudEdgeBuf.empty() && !pointCloudSurfBuf.empty()){
 
             //read data
-            //std::lock_guard<std::mutex> lock(mutex_lock);
+            std::lock_guard<std::mutex> lock(mutex_lock);
 			rclcpp::Time pointCloudSurfBuf_time = pointCloudSurfBuf.front()->header.stamp;
 			rclcpp::Time pointCloudEdgeBuf_time = pointCloudEdgeBuf.front()->header.stamp;
-			RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"PointCloud Surf Buf time : %f", pointCloudSurfBuf_time.seconds());
-			RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"PointCloud Edge Buf time : %f", pointCloudEdgeBuf_time.seconds());
             if(pointCloudSurfBuf_time.seconds() < pointCloudEdgeBuf_time.seconds()-0.5*lidar_param.scan_period){
                 pointCloudSurfBuf.pop();
                 RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"time stamp unaligned with extra point cloud, pls check your data --> odom correction");
-                //mutex_lock.unlock();
-                //continue;  
+                mutex_lock.unlock();
+                continue;  
             }
 
-			// pointCloudEdgeBuf_time = pointCloudEdgeBuf.front()->header.stamp;
-			// pointCloudSurfBuf_time = pointCloudSurfBuf.front()->header.stamp;
             if(pointCloudEdgeBuf_time.seconds() < pointCloudSurfBuf_time.seconds()-0.5*lidar_param.scan_period){
                 pointCloudEdgeBuf.pop();
                 RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"time stamp unaligned with extra point cloud, pls check your data --> odom correction");
-                //mutex_lock.unlock();
-                //continue;  
+                mutex_lock.unlock();
+                continue;  
             }
             //if time aligned 
             pcl::PointCloud<pcl::PointXYZ>::Ptr pointcloud_surf_in(new pcl::PointCloud<pcl::PointXYZ>());
@@ -151,7 +144,7 @@ void odom_estimation(){
             rclcpp::Time pointcloud_time = (pointCloudEdgeBuf.front())->header.stamp;
             pointCloudEdgeBuf.pop();
             pointCloudSurfBuf.pop();
-            //mutex_lock.unlock();
+            mutex_lock.unlock();
 
             if(is_odom_inited == false){
                 odomEstimation.initMapWithPoints(pointcloud_edge_in, pointcloud_surf_in);
@@ -188,7 +181,7 @@ void odom_estimation(){
             laserOdometry.pose.pose.position.y = t_current.y();
             laserOdometry.pose.pose.position.z = t_current.z();
 			pubLaserOdometry->publish(laserOdometry);
-			RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"odom published");
+			//RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"odom published");
 			
 			//std::shared_ptr<tf2_ros::TransformBroadcaster> br;
 			br = std::make_unique<tf2_ros::TransformBroadcaster>(this);
@@ -202,15 +195,15 @@ void odom_estimation(){
 			transform.transform.rotation.x = q_current.x(); 
 			transform.transform.rotation.y = q_current.y(); 
 			transform.transform.rotation.z = q_current.z(); 
-			RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"sending transform");
+			//RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"sending transform");
             br->sendTransform(transform);
-			RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"transform sent");
+			//RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"transform sent");
 			
         }
         //sleep 2 ms every time
-        //std::chrono::milliseconds dura(2);
-        //std::this_thread::sleep_for(dura);
-//    }
+        std::chrono::milliseconds dura(2);
+        std::this_thread::sleep_for(dura);
+    }
 }
 
 };
@@ -219,7 +212,9 @@ int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
 	RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"Starting odom estimation and mapping Node Spin");
-    rclcpp::spin(std::make_shared<odomEstimationMappingNode>());
+	auto oEMN {std::make_shared<odomEstimationMappingNode>()};
+	std::thread laser_processing_process(&odomEstimationMappingNode::odom_estimation, oEMN);
+    rclcpp::spin(oEMN);
 	rclcpp::shutdown();
 
     return 0;

@@ -42,12 +42,15 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/filter.h>
 
 //local lib
 #include "lidar.h"
 #include "laserProcessingClass.h"
 
 using std::placeholders::_1;
+//using namespace std::chrono_literals;
 
 class laserProcessingNode : public rclcpp::Node 
 {
@@ -63,6 +66,8 @@ rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubEdgePoints;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubSurfPoints;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubLaserCloudFiltered;
 rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subLaserCloud;
+
+//rclcpp::TimerBase::SharedPtr timer;
 
 laserProcessingNode() : Node("laserProcessingNode"){
     int scan_line = 64;
@@ -92,12 +97,10 @@ laserProcessingNode() : Node("laserProcessingNode"){
 					std::bind(&laserProcessingNode::velodyneHandler, this, std::placeholders::_1));
 					
 
-    pubLaserCloudFiltered = create_publisher<sensor_msgs::msg::PointCloud2>("/velodyne_points_filtered", 100);
-    pubEdgePoints = create_publisher<sensor_msgs::msg::PointCloud2>("/laser_cloud_edge", 100);
-    pubSurfPoints = create_publisher<sensor_msgs::msg::PointCloud2>("/laser_cloud_surf", 100); 
+    pubLaserCloudFiltered = create_publisher<sensor_msgs::msg::PointCloud2>("/points_filtered", 10);
+    pubEdgePoints = create_publisher<sensor_msgs::msg::PointCloud2>("/laser_cloud_edge", 10);
+    pubSurfPoints = create_publisher<sensor_msgs::msg::PointCloud2>("/laser_cloud_surf", 10); 
 
-
-    //std::thread laser_processing_process(&laserProcessingNode::laser_processing, this);
 	RCLCPP_INFO(rclcpp::get_logger("lPNode"),"Laser processing node started");
 }
 
@@ -106,9 +109,7 @@ void velodyneHandler(const sensor_msgs::msg::PointCloud2::SharedPtr laserCloudMs
 {
     std::lock_guard<std::mutex> lock(mutex_lock);
     pointCloudBuf.push(laserCloudMsg);
-	laser_processing();
     mutex_lock.unlock();
-   
 }
 
 double total_time =0;
@@ -117,19 +118,24 @@ int frame_count =0;
 int skip_frames = 1;
 
 void laser_processing(void){
-   // while(rclcpp::ok()){
+   while(1){
         if(!pointCloudBuf.empty()){
             //read data
-             //std::lock_guard<std::mutex> lock(mutex_lock);
+             std::lock_guard<std::mutex> lock(mutex_lock);
             pcl::PointCloud<pcl::PointXYZ>::Ptr pointcloud_in(new pcl::PointCloud<pcl::PointXYZ>());
             pcl::fromROSMsg(*pointCloudBuf.front(), *pointcloud_in);
+			// Filter out NaN from the cloud
+			std::vector<int> ind;
+			pointcloud_in->is_dense = false;
+			pcl::removeNaNFromPointCloud(*pointcloud_in, *pointcloud_in, ind);
+			
             rclcpp::Time pointcloud_time = (pointCloudBuf.front())->header.stamp;
             pointCloudBuf.pop();
-            //mutex_lock.unlock();
+            mutex_lock.unlock();
 
             frame_count++;
-            //if(frame_count%skip_frames!=0)
-            //    continue;
+            if(frame_count%skip_frames!=0)
+                continue;
             //ROS_INFO("start");
 
 
@@ -155,7 +161,7 @@ void laser_processing(void){
             *pointcloud_filtered+=*pointcloud_surf;
             pcl::toROSMsg(*pointcloud_filtered, laserCloudFilteredMsg);
             laserCloudFilteredMsg.header.stamp = pointcloud_time;
-            laserCloudFilteredMsg.header.frame_id = "base_link";
+            laserCloudFilteredMsg.header.frame_id = "map";
             pubLaserCloudFiltered->publish(laserCloudFilteredMsg);
 
             sensor_msgs::msg::PointCloud2 edgePointsMsg;
@@ -172,9 +178,9 @@ void laser_processing(void){
 
         }
         //sleep 2 ms every time
-        //std::chrono::milliseconds dura(2);
-        //std::this_thread::sleep_for(dura);
-    //}
+        std::chrono::milliseconds dura(2);
+        std::this_thread::sleep_for(dura);
+    }
 }
 
 };
@@ -183,7 +189,9 @@ int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
 	RCLCPP_INFO(rclcpp::get_logger("lPNode"),"Starting Laser Processing Node Spin");
-    rclcpp::spin(std::make_shared<laserProcessingNode>());
+    auto lPN {std::make_shared<laserProcessingNode>()};
+	std::thread laser_processing_process(&laserProcessingNode::laser_processing, lPN);
+	rclcpp::spin(lPN);
     rclcpp::shutdown();
 
     return 0;
