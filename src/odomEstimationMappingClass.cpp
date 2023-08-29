@@ -46,6 +46,15 @@ void OdomEstimationClass::updatePointsToMap(const pcl::PointCloud<pcl::PointXYZ>
     downSamplingToMap(edge_in,downsampledEdgeCloud,surf_in,downsampledSurfCloud);
     //ROS_WARN("point nyum%d,%d",(int)downsampledEdgeCloud->points.size(), (int)downsampledSurfCloud->points.size());
     if(laserCloudCornerMap->points.size()>10 && laserCloudSurfMap->points.size()>50){
+		// Filter out NaN from the cloud
+		std::vector<int> ind1;
+		laserCloudCornerMap->is_dense = false;
+		pcl::removeNaNFromPointCloud(*laserCloudCornerMap, *laserCloudCornerMap, ind1);
+		// Filter out NaN from the cloud
+		std::vector<int> ind2;
+		laserCloudSurfMap->is_dense = false;
+		pcl::removeNaNFromPointCloud(*laserCloudSurfMap, *laserCloudSurfMap, ind2);
+		
         kdtreeEdgeMap->setInputCloud(laserCloudCornerMap);
         kdtreeSurfMap->setInputCloud(laserCloudSurfMap);
 
@@ -72,6 +81,7 @@ void OdomEstimationClass::updatePointsToMap(const pcl::PointCloud<pcl::PointXYZ>
         }
     }else{
         printf("not enough points in map to associate, map error\n");
+		return;
     }
 
     odom = Eigen::Isometry3d::Identity();
@@ -153,7 +163,7 @@ void OdomEstimationClass::addEdgeCostFactor(const pcl::PointCloud<pcl::PointXYZ>
         }
     }
     if(corner_num<20){
-        printf("not enough correct points\n");
+        printf("not enough correct edge points\n");
     }
 
 }
@@ -211,7 +221,7 @@ void OdomEstimationClass::addSurfCostFactor(const pcl::PointCloud<pcl::PointXYZ>
 
     }
     if(surf_num<20){
-        printf("not enough correct points\n");
+        printf("not enough correct surf points\n");
     }
 
 }

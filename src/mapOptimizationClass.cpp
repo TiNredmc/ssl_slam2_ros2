@@ -49,7 +49,7 @@ void MapOptimizationClass::saveMap(std::string map_path){
 void MapOptimizationClass::addPoseToGraph(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud_edge_in, const pcl::PointCloud<pcl::PointXYZ>::Ptr& pointcloud_surf_in, Eigen::Isometry3d& odom_in){
 
     Eigen::Isometry3d transformed_pose = map_to_odom * odom_in;
-
+	printf("Please Don't crashes");
     downSizeEdgeFilter.setInputCloud(pointcloud_edge_in);
     downSizeSurfFilter.setInputCloud(pointcloud_surf_in);
     pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_edge_in(new pcl::PointCloud<pcl::PointXYZ>()); 
