@@ -13,7 +13,7 @@ def generate_launch_description():
         package='ssl_slam2',
         executable='ssl_slam2_laser_processing_node',
         parameters=[
-            {'scan_period': 0.05},
+            {'scan_period': 0.2},
             {'vertical_angle': 2.0},
             {'max_dis': 5.0},
             {'map_resolution': 0.02},
@@ -28,7 +28,7 @@ def generate_launch_description():
         package='ssl_slam2',
         executable='ssl_slam2_odom_estimation_mapping_node',
         parameters=[
-            {'scan_period': 0.05},
+            {'scan_period': 0.2},
             {'vertical_angle': 2.0},
             {'max_dis': 5.0},
             {'map_resolution': 0.02},
@@ -43,7 +43,7 @@ def generate_launch_description():
         package='ssl_slam2',
         executable='ssl_slam2_map_optimization_node',
         parameters=[
-            {'scan_period': 0.05},
+            {'scan_period': 0.2},
             {'vertical_angle': 2.0},
             {'max_dis': 5.0},
             {'map_resolution': 0.02},
