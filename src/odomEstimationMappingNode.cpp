@@ -181,9 +181,8 @@ void odom_estimation(){
             laserOdometry.pose.pose.position.y = t_current.y();
             laserOdometry.pose.pose.position.z = t_current.z();
 			pubLaserOdometry->publish(laserOdometry);
-			//RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"odom published");
+
 			
-			//std::shared_ptr<tf2_ros::TransformBroadcaster> br;
 			br = std::make_unique<tf2_ros::TransformBroadcaster>(this);
             geometry_msgs::msg::TransformStamped transform;
 			transform.header.stamp = pointcloud_time;
@@ -195,9 +194,8 @@ void odom_estimation(){
 			transform.transform.rotation.x = q_current.x(); 
 			transform.transform.rotation.y = q_current.y(); 
 			transform.transform.rotation.z = q_current.z(); 
-			//RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"sending transform");
             br->sendTransform(transform);
-			//RCLCPP_INFO(rclcpp::get_logger("oEMNode"),"transform sent");
+
 			
         }
         //sleep 2 ms every time
