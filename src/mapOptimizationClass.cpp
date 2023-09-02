@@ -178,7 +178,7 @@ bool MapOptimizationClass::geometryConsistencyVerification(int matched_id, int c
     pcl::transformPointCloud(*current_scan_surf_temp, *current_scan_surf, transform_pose.cast<float>().inverse());
 
     double match_score = estimateOdom(map_edge,map_surf,current_scan_edge,current_scan_surf,transform);
-    //ROS_WARN("global optimization geometry consistency matched score %f, if it is too large, global optimization will not enabled",match_score);
+    RCLCPP_WARN(rclcpp::get_logger("mOClass"),"global optimization geometry consistency matched score %f, if it is too large, global optimization will not enabled",match_score);
 
     if(match_score < LOOPCLOSURE_THRESHOLD / map_resolution){
         return true;
