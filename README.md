@@ -96,6 +96,10 @@ if you encounter ``c++: fatal error: Killed signal terminated program cc1plus`` 
 ```
     colcon build --symlink-install --packages-select ssl_slam2  --executor sequential
 ```
+or
+```
+    MAKEFLAGS="-j3 -l1" colcon build --symlink-install --packages-select ssl_slam2 --executor sequential
+```
 
 ### 4.2 Download test rosbag
 You may download our recorded data: [MappingTest.bag](https://drive.google.com/file/d/1XRXKkq3TsUiM4o9_bWL8t9HqWHswfgWo/view?usp=sharing) (3G) and [LocalizationTest.bag](https://drive.google.com/file/d/1-5j_jgraus0gJkpFRZS5hFUiKlT7aQtG/view?usp=sharing) (6G)if you dont have realsense L515, and by defult the file should be under home/user/Downloads
