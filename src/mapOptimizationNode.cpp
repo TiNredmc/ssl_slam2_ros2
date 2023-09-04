@@ -154,36 +154,36 @@ void map_optimization(){
             //read data
             std::lock_guard<std::mutex> lock(mutex_lock);
 			
-			rclcpp::Time odometryBuf_time = odometryBuf.front()->header.stamp;
-			rclcpp::Time pointCloudSurfBuf_time = pointCloudSurfBuf.front()->header.stamp;
-			rclcpp::Time pointCloudEdgeBuf_time = pointCloudEdgeBuf.front()->header.stamp;
+	    rclcpp::Time odometryBuf_time = odometryBuf.front()->header.stamp;
+	    rclcpp::Time pointCloudSurfBuf_time = pointCloudSurfBuf.front()->header.stamp;
+	    rclcpp::Time pointCloudEdgeBuf_time = pointCloudEdgeBuf.front()->header.stamp;
 			
             if(!odometryBuf.empty() && 
 			  (odometryBuf_time.seconds() < pointCloudSurfBuf_time.seconds()-0.5*lidar_param.scan_period || 
 			   pointCloudSurfBuf_time.seconds() < pointCloudEdgeBuf_time.seconds()-0.5*lidar_param.scan_period)){
 				   
                 RCLCPP_WARN(rclcpp::get_logger("mONode"),"time stamp unaligned error and odom discarded, pls check your data --> map optimization"); 
-                odometryBuf.pop();
-                mutex_lock.unlock();
-                continue;              
+//                odometryBuf.pop();
+//                mutex_lock.unlock();
+//                continue;              
             }
 
             if(!pointCloudSurfBuf.empty() && 
 			  (pointCloudSurfBuf_time.seconds() < odometryBuf_time.seconds()-0.5*lidar_param.scan_period || 
 			   pointCloudSurfBuf_time.seconds() < pointCloudEdgeBuf_time.seconds()-0.5*lidar_param.scan_period)){
-                pointCloudSurfBuf.pop();
+//                pointCloudSurfBuf.pop();
                 RCLCPP_INFO(rclcpp::get_logger("mONode"),"time stamp unaligned with extra point cloud, pls check your data --> map optimization");
-                mutex_lock.unlock();
-                continue;  
+//                mutex_lock.unlock();
+//                continue;  
             }
 
             if(!pointCloudEdgeBuf.empty() && 
 			  (pointCloudEdgeBuf_time.seconds() < odometryBuf_time.seconds()-0.5*lidar_param.scan_period || 
 			   pointCloudEdgeBuf_time.seconds() < pointCloudSurfBuf_time.seconds()-0.5*lidar_param.scan_period)){
-                pointCloudEdgeBuf.pop();
+//                pointCloudEdgeBuf.pop();
                 RCLCPP_INFO(rclcpp::get_logger("mONode"),"time stamp unaligned with extra point cloud, pls check your data --> map optimization");
-                mutex_lock.unlock();
-                continue;  
+//                mutex_lock.unlock();
+//                continue;  
             }
 
             //if time aligned 
@@ -195,7 +195,9 @@ void map_optimization(){
             Eigen::Isometry3d current_pose = Eigen::Isometry3d::Identity();
             current_pose.rotate(Eigen::Quaterniond(odometryBuf.front()->pose.pose.orientation.w,odometryBuf.front()->pose.pose.orientation.x,odometryBuf.front()->pose.pose.orientation.y,odometryBuf.front()->pose.pose.orientation.z));  
             current_pose.pretranslate(Eigen::Vector3d(odometryBuf.front()->pose.pose.position.x,odometryBuf.front()->pose.pose.position.y,odometryBuf.front()->pose.pose.position.z));
-            rclcpp::Time pointcloud_time = (odometryBuf.front())->header.stamp;
+//            rclcpp::Time pointcloud_time = (odometryBuf.front())->header.stamp;
+            rclcpp::Clock system_clock;
+            rclcpp::Time pointcloud_time = system_clock.now();
             pointCloudEdgeBuf.pop();
             pointCloudSurfBuf.pop();
             odometryBuf.pop();
@@ -217,7 +219,7 @@ void map_optimization(){
             }
 
             if(total_frame%30 ==0){
-				RCLCPP_INFO(rclcpp::get_logger("mONode"),"Publishing Edge Map and Surf Map ...");
+		RCLCPP_INFO(rclcpp::get_logger("mONode"),"Publishing Edge Map and Surf Map ...");
                 sensor_msgs::msg::PointCloud2 PointsMsg;
                 pcl::toROSMsg(*(mapOptimization.edgeMap)+*(mapOptimization.surfMap), PointsMsg);
                 RCLCPP_INFO(rclcpp::get_logger("mONode"),"Edge Map size:%ld, Surf Map Size:%ld", (mapOptimization.edgeMap)->points.size(), (mapOptimization.surfMap)->points.size());
