@@ -98,6 +98,9 @@ void velodyneHandler(const sensor_msgs::msg::PointCloud2::SharedPtr laserCloudMs
     pcl::PointCloud<pcl::PointXYZ>::Ptr pointcloud_in(new pcl::PointCloud<pcl::PointXYZ>());
     pcl::fromROSMsg(*laserCloudMsg, *pointcloud_in);
     rclcpp::Time pointcloud_time = laserCloudMsg->header.stamp;
+    std::vector<int> ind1;
+    pointcloud_in->is_dense = false;
+    pcl::removeNaNFromPointCloud(*pointcloud_in, *pointcloud_in, ind1);
     //pointCloudBuf.pop();
 
     frame_count++;
