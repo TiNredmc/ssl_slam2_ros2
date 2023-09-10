@@ -82,7 +82,7 @@ laserProcessingNode() : Node("laserProcessingNode"){
     pubEdgePoints = create_publisher<sensor_msgs::msg::PointCloud2>("/laser_cloud_edge", 10);
     pubSurfPoints = create_publisher<sensor_msgs::msg::PointCloud2>("/laser_cloud_surf", 10); 
 
-    RCLCPP_INFO(rclcpp::get_logger("lPNode"),"Laser processing node started");
+    RCLCPP_INFO(this->get_logger(),"Laser processing node started");
 }
 
 double total_time =0;
@@ -93,14 +93,13 @@ int skip_frames = 1;
 void velodyneHandler(const sensor_msgs::msg::PointCloud2::SharedPtr laserCloudMsg)
 {
     std::lock_guard<std::mutex> lock(mutex_lock);
-    
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr pointcloud_in(new pcl::PointCloud<pcl::PointXYZ>());
     pcl::fromROSMsg(*laserCloudMsg, *pointcloud_in);
     rclcpp::Time pointcloud_time = laserCloudMsg->header.stamp;
     std::vector<int> ind1;
     pointcloud_in->is_dense = false;
     pcl::removeNaNFromPointCloud(*pointcloud_in, *pointcloud_in, ind1);
-    
 
     //frame_count++;
     //if(frame_count%skip_frames!=0)
@@ -120,7 +119,7 @@ void velodyneHandler(const sensor_msgs::msg::PointCloud2::SharedPtr laserCloudMs
     float time_temp = elapsed_seconds.count() * 1000;
     total_time+=time_temp;
     if(total_frame%500==0)
-       RCLCPP_INFO(rclcpp::get_logger("lPNode"),"average laser processing time %f ms \n \n", total_time/total_frame);
+       RCLCPP_INFO(this->get_logger(),"average laser processing time %f ms \n \n", total_time/total_frame);
 
     sensor_msgs::msg::PointCloud2 laserCloudFilteredMsg;
     pcl::PointCloud<pcl::PointXYZ>::Ptr pointcloud_filtered(new pcl::PointCloud<pcl::PointXYZ>());  
@@ -151,7 +150,6 @@ void velodyneHandler(const sensor_msgs::msg::PointCloud2::SharedPtr laserCloudMs
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
-    RCLCPP_INFO(rclcpp::get_logger("lPNode"),"Starting Laser Processing Node Spin");
     auto lPN {std::make_shared<laserProcessingNode>()};
     rclcpp::spin(lPN);
     rclcpp::shutdown();
