@@ -107,7 +107,7 @@ odomEstimationMappingNode() : Node("odomEstimationMappingNode"){
     pubEdgeLaserCloud = create_publisher<sensor_msgs::msg::PointCloud2>("/edge_map", 10);
     pubSurfLaserCloud = create_publisher<sensor_msgs::msg::PointCloud2>("/surf_map", 10);
     
-    pubLaserOdometry = create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
+    pubLaserOdometry = create_publisher<nav_msgs::msg::Odometry>("/laser_odom", 10);
 
     RCLCPP_INFO(this->get_logger(), "odom estimation and mapping node started");
 }
@@ -149,7 +149,7 @@ void velodyneCloudSyncHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPt
     nav_msgs::msg::Odometry laserOdometry;
 
     laserOdometry.header.frame_id = "map"; 
-    laserOdometry.child_frame_id = "base_link"; 
+    laserOdometry.child_frame_id = "odom"; 
     laserOdometry.header.stamp = pointcloud_time;
     laserOdometry.pose.pose.orientation.x = q_current.x();
     laserOdometry.pose.pose.orientation.y = q_current.y();
@@ -165,7 +165,7 @@ void velodyneCloudSyncHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPt
      geometry_msgs::msg::TransformStamped transform;
      transform.header.stamp = pointcloud_time;
      transform.header.frame_id = "map";
-     transform.child_frame_id = "base_link";
+     transform.child_frame_id = "odom";
      transform.transform.translation.x = t_current.x();
      transform.transform.translation.y = t_current.y();
      transform.transform.translation.z = t_current.z();
