@@ -67,7 +67,7 @@ message_filters::Subscriber<sensor_msgs::msg::PointCloud2> subSurfLaserCloud;
 typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::PointCloud2, sensor_msgs::msg::PointCloud2> cloudaprox_policy;
 
 
-bool publish_odom_tf = true;
+bool publish_odom_tf {false};
 
 odomEstimationMappingNode() : Node("odomEstimationMappingNode"){
     int scan_line = 64;
@@ -76,14 +76,13 @@ odomEstimationMappingNode() : Node("odomEstimationMappingNode"){
     double max_dis = 60.0;
     double min_dis = 2.0;
     double map_resolution = 0.05;
-    bool pub_odom_tf = true;
+    bool pub_odom_tf = false;
     get_parameter("/scan_period", scan_period); 
     get_parameter("/vertical_angle", vertical_angle); 
     get_parameter("/max_dis", max_dis);
     get_parameter("/min_dis", min_dis);
     get_parameter("/scan_line", scan_line);
     get_parameter("/pub_odom_tf", pub_odom_tf);
-
     publish_odom_tf = pub_odom_tf;
 
     // get_parameter("/map_resolution", map_resolution);
@@ -101,13 +100,13 @@ odomEstimationMappingNode() : Node("odomEstimationMappingNode"){
     subEdgeLaserCloud.subscribe(this, "/laser_cloud_edge");
     subSurfLaserCloud.subscribe(this, "/laser_cloud_surf"); 
 
-    static message_filters::Synchronizer<cloudaprox_policy> syncApproximate(10, subEdgeLaserCloud, subSurfLaserCloud);
+    static message_filters::Synchronizer<cloudaprox_policy> syncApproximate(100, subEdgeLaserCloud, subSurfLaserCloud);
     syncApproximate.registerCallback(std::bind(&odomEstimationMappingNode::velodyneCloudSyncHandler, this, std::placeholders::_1, std::placeholders::_2));
 
-    pubEdgeLaserCloud = create_publisher<sensor_msgs::msg::PointCloud2>("/edge_map", 10);
-    pubSurfLaserCloud = create_publisher<sensor_msgs::msg::PointCloud2>("/surf_map", 10);
+    pubEdgeLaserCloud = create_publisher<sensor_msgs::msg::PointCloud2>("/edge_map", 100);
+    pubSurfLaserCloud = create_publisher<sensor_msgs::msg::PointCloud2>("/surf_map", 100);
     
-    pubLaserOdometry = create_publisher<nav_msgs::msg::Odometry>("/laser_odom", 10);
+    pubLaserOdometry = create_publisher<nav_msgs::msg::Odometry>("/laser_odom", 100);
 
     RCLCPP_INFO(this->get_logger(), "odom estimation and mapping node started");
 }
