@@ -72,13 +72,14 @@ double min_map_update_angle = 30;
 double min_map_update_distance = 1.0;
 MapOptimizationClass mapOptimization;
 std::string map_path;
+std::string odom_topic;
 
 mapOptimizationNode() : Node("mapOptimizationNode"){
 	int scan_line = 64;
     double vertical_angle = 2.0;
     double max_dis = 60.0;
     double min_dis = 2.0;
-
+    odom_topic = "/laser_odom";
     get_parameter("/scan_period", scan_period); 
     get_parameter("/vertical_angle", vertical_angle); 
     get_parameter("/max_dis", max_dis);
@@ -89,7 +90,7 @@ mapOptimizationNode() : Node("mapOptimizationNode"){
     get_parameter("/min_map_update_distance", min_map_update_distance);
     get_parameter("/min_map_update_angle", min_map_update_angle);
     get_parameter("/min_map_update_frame", min_map_update_frame);
-    
+    get_parameter("/odom_topic", odom_topic);    
     mapOptimization.init(map_resolution);
     last_pose.translation().x() = 100;
 	
@@ -97,9 +98,9 @@ mapOptimizationNode() : Node("mapOptimizationNode"){
     // Message filters subscribe to both PointCloud2 topics and Odometry topic
     subEdgeLaserCloud.subscribe(this, "/laser_cloud_edge");
     subSurfLaserCloud.subscribe(this, "/laser_cloud_surf"); 
-    subOdometry.subscribe(this, "/odom");
+    subOdometry.subscribe(this, odom_topic);
 	
-    static message_filters::Synchronizer<cloudodomaprox_policy> syncApproximate(5, subEdgeLaserCloud, subSurfLaserCloud, subOdometry);
+    static message_filters::Synchronizer<cloudodomaprox_policy> syncApproximate(100, subEdgeLaserCloud, subSurfLaserCloud, subOdometry);
     syncApproximate.registerCallback(std::bind(&mapOptimizationNode::velodyneCloudOdomSyncHandler, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	
     //map saving service
@@ -107,7 +108,7 @@ mapOptimizationNode() : Node("mapOptimizationNode"){
 	                "save_map", 
 			std::bind(&mapOptimizationNode::saveMapCallback, this, std::placeholders::_1, std::placeholders::_2));
 
-    map_pub = create_publisher<sensor_msgs::msg::PointCloud2>("/map", 10);
+    map_pub = create_publisher<sensor_msgs::msg::PointCloud2>("/map", 100);
 
     RCLCPP_INFO(this->get_logger(),"map Optimization node started");
 }
