@@ -13,11 +13,11 @@ def generate_launch_description():
         package='ssl_slam2',
         executable='ssl_slam2_laser_processing_node',
         parameters=[
-            {'scan_period': 0.03},
+            {'scan_period': 0.1},
             {'vertical_angle': 2.0},
-            {'max_dis': 8.0},
+            {'max_dis': 3.5},
             {'map_resolution': 0.005},
-            {'min_dis': 0.3},
+            {'min_dis': 0.5},
             {'skip_frames': 1},
             {'map_path': home},   
         ],
@@ -28,14 +28,14 @@ def generate_launch_description():
         package='ssl_slam2',
         executable='ssl_slam2_odom_estimation_mapping_node',
         parameters=[
-            {'scan_period': 0.03},
+            {'scan_period': 0.05},
             {'vertical_angle': 2.0},
-            {'max_dis': 8.0},
-            {'map_resolution': 0.005},
-            {'min_dis': 0.3},
+            {'max_dis': 4.5},
+            {'map_resolution': 0.01},
+            {'min_dis': 0.4},
             {'skip_frames': 1},
             {'map_path': home},
-            {'publish_odom_tf': True}   
+            {'pub_odom_tf': True}   
         ],
         output='screen',
     )
@@ -44,16 +44,17 @@ def generate_launch_description():
         package='ssl_slam2',
         executable='ssl_slam2_map_optimization_node',
         parameters=[
-            {'scan_period': 0.03},
+            {'scan_period': 0.05},
             {'vertical_angle': 2.0},
-            {'max_dis': 8.0},
-            {'map_resolution': 0.005},
-            {'min_dis': 0.3},
+            {'max_dis': 4.5},
+            {'map_resolution': 0.01},
+            {'min_dis': 0.4},
             {'skip_frames': 1},
             {'map_path': home},
             {'min_map_update_distance' : 0.5},
             {'min_map_update_angle': 20.0},
-            {'min_map_update_frame': 8.0},
+            {'min_map_update_frame': 2.0},
+            {'odom_topic': "/laser_odom"}
         ],
         output='screen',
     )
